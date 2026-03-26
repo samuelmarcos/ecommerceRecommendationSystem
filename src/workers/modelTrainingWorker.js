@@ -59,8 +59,16 @@ function makeContext(products, users) {
         return [category, index]
     }))
 
-    //computar a média de idade do compradores por produto
-    // para ajudar a personalizar as recomendações
+    // Calcula a média de idade dos compradores por produto para personalizar recomendações.
+    //
+    // ageSums  — acumula a soma das idades de todos os usuários que compraram cada produto.
+    //            { nome_do_produto: soma_das_idades }
+    //
+    // ageCounts — conta quantas vezes cada produto foi comprado (número de compradores).
+    //             { nome_do_produto: quantidade_de_compradores }
+    //
+    // midAge é o ponto médio do intervalo de idades e serve como fallback para produtos
+    // que ainda não foram comprados por ninguém (cold-start), evitando enviesar o modelo.
 
     const midAge = (maxAge - minAge) / 2;
     const ageSums = {}
@@ -72,6 +80,11 @@ function makeContext(products, users) {
         });
     })
 
+    // productAvgAge — dicionário { nome_do_produto: média_normalizada (0–1) }.
+    // Representa o perfil etário típico de cada produto:
+    //   0 → compradores jovens (próximo de minAge)
+    //   1 → compradores mais velhos (próximo de maxAge)
+    // Usado como feature no modelo para aprender padrões de consumo por faixa etária.
     const productAvgAge = Object.fromEntries(
         products.map(product => {
             const avg = ageCounts[product.name] ?
@@ -135,9 +148,8 @@ function encodedProduct(product, context) {
         context.numColors,
         weights.color
     );
-
+    
     return tf.concat1d([price, category, color]);
-
 }
 
 /**
